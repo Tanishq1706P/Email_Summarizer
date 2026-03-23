@@ -1,4 +1,4 @@
-﻿import json
+import json
 import logging
 import os
 from pathlib import Path
@@ -22,7 +22,7 @@ def default_config() -> dict[str, Any]:
     """
     return {
         # ---- Runtime ----
-        "offline": True,
+        "offline": False,
         "ollama_host": os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
         "ollama_timeout_seconds": 120,
         "ollama_keep_alive": "10m",

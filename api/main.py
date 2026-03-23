@@ -1,38 +1,91 @@
-﻿from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from pipeline import EmailSummarizationPipeline
 from models.data_model import EmailDoc, UserFeedback, ErrorResponse, ErrorInfo, ErrorDetail
 import os
 import json
 import uuid
 import time
+import redis
 from logging_utils import setup_logging
 from collections import defaultdict
 
 # Setup structured logging
 logger = setup_logging("api.main")
 
-app = FastAPI(title="Email Summarizer Vercel API")
+app = FastAPI(title="Email Summarizer Production API")
 
-# API-6: Simple In-Memory Rate Limiting (Replace with Redis in Production)
-RATE_LIMIT = 100 # requests per minute
+# ---- Security & Infrastructure Setup ----
+
+# 1. CORS Configuration
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 2. API Key Authentication
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+PRODUCTION_API_KEY = os.environ.get("API_KEY")
+
+async def verify_api_key(api_key: str = Depends(api_key_header)):
+    # Skip auth in development if no API_KEY is set
+    if not PRODUCTION_API_KEY:
+        return api_key
+    if api_key != PRODUCTION_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials"
+        )
+    return api_key
+
+# 3. Rate Limiting (Redis with In-Memory Fallback)
+RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "100"))
+REDIS_URL = os.environ.get("REDIS_URL")
+redis_client = None
+
+if REDIS_URL:
+    try:
+        redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+        logger.info("Redis rate limiting enabled")
+    except Exception as e:
+        logger.error(f"Failed to connect to Redis: {e}")
+
+# In-memory fallback
 request_counts = defaultdict(list)
 
 def check_rate_limit(client_ip: str):
     now = time.time()
-    # Filter requests in the last 60 seconds
+    
+    # Try Redis first
+    if redis_client:
+        try:
+            key = f"rate_limit:{client_ip}"
+            current = redis_client.incr(key)
+            if current == 1:
+                redis_client.expire(key, 60)
+            return current <= RATE_LIMIT
+        except Exception as e:
+            logger.warning(f"Redis rate limit check failed: {e}")
+
+    # In-memory fallback
     request_counts[client_ip] = [t for t in request_counts[client_ip] if now - t < 60]
     if len(request_counts[client_ip]) >= RATE_LIMIT:
         return False
     request_counts[client_ip].append(now)
     return True
 
-# Check if we are running in Vercel
-IS_VERCEL = os.environ.get("VERCEL") == "1"
+# ---- Application Logic ----
 
-# Initialize pipeline lazily to avoid blocking startup
+IS_RENDER = os.environ.get("RENDER") == "true"
 pipeline = None
 
 def get_pipeline():
@@ -41,7 +94,7 @@ def get_pipeline():
         try:
             pipeline = EmailSummarizationPipeline()
         except Exception as e:
-            logger.error("Failed to initialize pipeline", exc_info=True)
+            logger.error("Failed to initialize pipeline", exc_info=True)        
             raise RuntimeError("Pipeline initialization failed")
     return pipeline
 
@@ -60,8 +113,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 @app.middleware("http")
-async def security_and_telemetry_middleware(request: Request, call_next):
-    # API-6: Rate Limiting
+async def security_and_telemetry_middleware(request: Request, call_next):       
     client_ip = request.client.host if request.client else "unknown"
     if not check_rate_limit(client_ip):
         return JSONResponse(
@@ -72,13 +124,13 @@ async def security_and_telemetry_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
     start_time = time.perf_counter()
-    
+
     response = await call_next(request)
-    
+
     process_time = (time.perf_counter() - start_time) * 1000
     response.headers["X-Process-Time-MS"] = str(round(process_time, 2))
     response.headers["X-Request-ID"] = request_id
-    
+
     logger.info(
         "Request processed",
         extra={"props": {
@@ -93,9 +145,12 @@ async def security_and_telemetry_middleware(request: Request, call_next):
 
 @app.get("/")
 async def read_root():
-    return {"message": "Email Summarizer API is running", "is_vercel": IS_VERCEL}
+    return {"message": "Email Summarizer API is running", "is_render": IS_RENDER}
 
-@app.post("/summarize", response_model=dict, responses={422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+@app.post("/summarize", 
+          response_model=dict, 
+          responses={422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+          dependencies=[Depends(verify_api_key)])
 async def summarize(email: EmailDoc, request: Request):
     try:
         pipe = await run_in_threadpool(get_pipeline)
@@ -117,7 +172,9 @@ async def summarize(email: EmailDoc, request: Request):
             content=ErrorResponse(error=error_info).model_dump()
         )
 
-@app.post("/feedback", responses={422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+@app.post("/feedback", 
+          responses={422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+          dependencies=[Depends(verify_api_key)])
 async def feedback(fb: UserFeedback, request: Request):
     try:
         pipe = await run_in_threadpool(get_pipeline)
@@ -144,5 +201,6 @@ async def health_ready():
     try:
         await run_in_threadpool(get_pipeline)
         return {"status": "ready"}
-    except Exception:
-        return JSONResponse(status_code=503, content={"status": "not_ready"})
+    except Exception as e:
+        logger.error(f"Health ready check failed: {str(e)}", exc_info=True)     
+        return JSONResponse(status_code=503, content={"status": "not_ready", "detail": str(e)})

@@ -45,11 +45,11 @@ class LocalOllama:
                 f"Offline mode requires loopback Ollama host, got {settings.host!r}"
             )
         self._settings = settings
-        # Some ollama client versions support timeout; keep it best-effort.
+        # ollama 0.1.0 uses base_url instead of host
         try:
-            self._client = ollama.Client(host=settings.host, timeout=settings.timeout_seconds)
+            self._client = ollama.Client(base_url=settings.host, timeout=settings.timeout_seconds)
         except TypeError:
-            self._client = ollama.Client(host=settings.host)
+            self._client = ollama.Client(base_url=settings.host)
 
     def warmup(self, model: str) -> None:
         """
@@ -89,7 +89,6 @@ class LocalOllama:
             except Exception as e:
                 last_err = e
                 if i < attempts - 1:
-                    time.sleep(self._settings.retry_backoff_seconds * (2**i))
+                    time.sleep(self._settings.retry_backoff_seconds * (2**i))   
                     continue
                 raise
-
