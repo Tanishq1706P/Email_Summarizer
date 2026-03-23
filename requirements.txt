@@ -1,9 +1,9 @@
-﻿# Core libraries
+# Core libraries
 numpy==1.26.2
 pandas==2.1.4
 
 # NLP / Hybrid Search / embeddings
-sentence-transformers==2.2.2
+sentence-transformers>=2.6.0
 spacy==3.7.2
 rank-bm25==0.2.2
 

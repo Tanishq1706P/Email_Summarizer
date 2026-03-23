@@ -10,7 +10,7 @@ authors = [{name = "Author"}]
 dependencies = [
     "numpy==1.26.2",
     "pandas==2.1.4",
-    "sentence-transformers==2.2.2",
+    "sentence-transformers>=2.6.0",
     "spacy==3.7.2",
     "ollama==0.1.0",
     "fastapi==0.115.2",
