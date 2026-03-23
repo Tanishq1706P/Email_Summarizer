@@ -1,5 +1,5 @@
-﻿import logging
-from typing import List, Optional
+import logging
+from typing import List, Optional, Any
 from models.data_model import EvalScores, ActionItem
 from pipelines.summarizer.config import load_config
 from logging_utils import setup_logging
