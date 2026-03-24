@@ -47,14 +47,14 @@ class LearningStore:
                 self._mongo_client.server_info()
                 self._db = self._mongo_client[mongo_cfg.get("db_name", "email_summarizer")]
                 self._use_mongo = True
-                logger.info("LearningStore initialized with MongoDB", extra={"props": {"uri": mongo_uri}})
+                logger.info("LearningStore initialized with MongoDB", extra={"props": {"db": mongo_cfg.get("db_name", "email_summarizer")}})
             except Exception as e:
                 logger.warning(f"Failed to connect to MongoDB, falling back to JSON: {e}")
                 self._use_mongo = False
 
         if not self._use_mongo:
             self._data = self._load_json()
-            logger.info("LearningStore initialized with JSON", extra={"props": {"path": str(self._path)}})
+            logger.info("LearningStore initialized with JSON")
 
         self._dirty = False
         self._last_save = 0.0

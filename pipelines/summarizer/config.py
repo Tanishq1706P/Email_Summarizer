@@ -29,8 +29,9 @@ def default_config() -> dict[str, Any]:
         "ollama_num_retries": 2,
         "ollama_retry_backoff_seconds": 0.5,
 
-        # ---- Model settings ----
-        "llm": os.environ.get("LLM_MODEL", "qwen2.5:1.5b"),
+# ---- Model settings ----
+"llm": os.environ.get("LLM_MODEL", "qwen2.5:3b"),
+"groq_model": os.environ.get("GROQ_MODEL", "llama-3.2-1b-preview"),
         "temperature": 0.1,
         "num_predict": 512,
         "num_ctx": 4096,
@@ -51,7 +52,7 @@ def default_config() -> dict[str, Any]:
         "min_feedback_to_learn": 20,
 
         # ---- Evaluation (Production: Disabled by default) ----
-        "eval_enabled": False, 
+        "eval_enabled": True, 
         "eval_confidence_gate": 0.85,
         "eval_max_corrections": 1, # Minimal corrections in production
         "eval_model": "sentence-transformers/all-MiniLM-L6-v2",

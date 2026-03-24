@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: email-summarizer
+    env: docker
+    region: oregon  # or your preferred region
+    dockerfilePath: ./Dockerfile
+    plan: starter  # free tier
+    envVars:
+      - key: API_KEY
+        generateValue: true  # Auto-generates secret
+      - key: MONGO_URI
+        sync: false  # Manual secret input
+      - key: REDIS_URL
+        sync: false
+      - key: GROQ_API_KEY
+        generateValue: true

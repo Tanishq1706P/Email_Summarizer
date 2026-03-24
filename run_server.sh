@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Server Execution Script
@@ -6,7 +6,7 @@ set -euo pipefail
 
 echo ">>> Starting Email Summarizer API..."
 
-# Default environment variables if not set
+source .env || true  # Load MONGO_URI first
 export MONGO_URI="${MONGO_URI:-mongodb://localhost:27017}"
 export OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
 export LOG_LEVEL="${LOG_LEVEL:-INFO}"

@@ -28,12 +28,11 @@ class Embedder:
         if self._initialized:
             return
         
-        self.model_name = model_name or CFG.get("embedding_model", "all-MiniLM-L6-v2")
+
+        self.model_name = model_name or CFG.get("eval_model", "sentence-transformers/all-MiniLM-L6-v2")
         self._model = None
-        self._load_model()
         self._initialized = True
 
-    def _load_model(self):
         try:
             # SentenceTransformer handles caching internally
             self._model = SentenceTransformer(self.model_name)

@@ -22,5 +22,8 @@ EXPOSE 8000
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# Command to run the application
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Make startup script executable and use it
+RUN chmod +x run_server.sh
+
+# Command to run the application (uses enhanced startup)
+CMD ["./run_server.sh"]

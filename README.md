@@ -36,17 +36,20 @@ An AI-powered email summarization and metadata extraction server that helps user
 ## ?? Setup & Installation
 
 ### 1. Prerequisites
+
 - Python 3.10 or higher
 - [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
 - [Ollama](https://ollama.com/) (installed and running on host)
 
 ### 2. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd Android_Email_Project
 ```
 
 ### 3. Install Dependencies
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: .\venv\Scripts\activate
@@ -54,24 +57,33 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configure Environment
+
 Copy the example environment file and update the variables:
+
 ```bash
 cp .env.example .env
 ```
+
 Ensure `OLLAMA_HOST` and `MONGO_URI` are correctly configured.
 
 ### 5. Start Infrastructure
+
 Run the setup script to start MongoDB, Qdrant, and Redis containers:
+
 ```bash
 ./setup_infra.sh
 ```
 
 ### 6. Run the Server
+
 Start the FastAPI server:
+
 ```bash
 ./run_server.sh
 ```
+
 Or manually using uvicorn:
+
 ```bash
 uvicorn api.main:app --reload --port 8000
 ```
@@ -79,10 +91,35 @@ uvicorn api.main:app --reload --port 8000
 ## ?? API Endpoints
 
 - `GET /`: Health check.
-- `POST /summarize`: Summarize an email. Expects an `EmailDoc` JSON body.
-- `POST /feedback`: Submit user feedback for a summary session.
+- `POST /summarize`: Summarize an email. Expects an `EmailDoc` JSON body. **Requires `X-API-Key` header**.
+- `POST /feedback`: Submit user feedback for a summary session. **Requires `X-API-Key` header**.
 - `GET /health/live`: Liveness check.
 - `GET /health/ready`: Readiness check.
 
+## 🚀 Deployed Instance
+
+**Live Backend**: https://email-summarizer-ybjk.onrender.com/
+
+### Quick Test Commands
+
+```bash
+# Root
+curl https://email-summarizer-ybjk.onrender.com/
+
+# Health
+curl https://email-summarizer-ybjk.onrender.com/health/live
+
+# Summarize (replace YOUR_API_KEY)
+curl -X POST https://email-summarizer-ybjk.onrender.com/summarize \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"id": "test", "text": "Meeting tomorrow at 2pm", "user_id": "user1"}'
+```
+
+**Status**: ✅ All endpoints tested and functional on deployed instance (2024-03-23).
+
 ---
-*For detailed guides on deployment, see [DEPLOYMENT_VERCEL.md](DEPLOYMENT_VERCEL.md).*
+
+_For detailed guides on deployment, see [DEPLOYMENT.md](DEPLOYMENT.md)._
+
+X-API-Key" = "b7f3c9a8e2d14f6bb5c4a91d8f0e7c6a3b2d1e9f8a7c6b5d4e3f2a1b9c8d7e6"
