@@ -128,9 +128,8 @@ class EmailSummarizationPipeline:
                 ev.skipped = True
                 meta.eval_skipped = True
             else:
-        # Evaluator disabled
-        email_emb = None
-                action_items_raw = [
+                # Evaluator disabled - skip eval block
+                pass
                     ActionItem(action=a.get("action", ""))
                     for a in data.get("action_items", [])
                     if isinstance(a, dict)
