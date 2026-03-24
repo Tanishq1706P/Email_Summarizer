@@ -2,7 +2,7 @@
 
 An AI-powered email summarization and metadata extraction server that helps users manage their inbox more efficiently. It extracts key information, identifies action items, and learns from user feedback to improve future summaries.
 
-## ?? Key Features
+## Key Features
 
 - **Automated Summarization**: Generates concise summaries of long emails using LLMs.
 - **Action Item Extraction**: Identifies and extracts tasks, deadlines, and open questions.
@@ -11,7 +11,7 @@ An AI-powered email summarization and metadata extraction server that helps user
 - **Hybrid Search**: Supports semantic search via vector embeddings and keyword search.
 - **Rate Limiting & Reliability**: Built-in rate limiting and circuit breaker for robust production use.
 
-## ?? Tech Stack
+## Tech Stack
 
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+)
 - **LLM Inference**: [Ollama](https://ollama.com/) (Local) or OpenAI (Optional)
@@ -23,7 +23,7 @@ An AI-powered email summarization and metadata extraction server that helps user
 - **Data Versioning**: [DVC](https://dvc.org/)
 - **Deployment**: [Vercel](https://vercel.com/) (Serverless)
 
-## ?? Server Flow
+## Server Flow
 
 1.  **Request Ingestion**: Receives raw email data (subject, body, sender, etc.) via the `/summarize` endpoint.
 2.  **Adaptive Rule Injection**: Fetches previously learned user preferences and instructions from the `LearningStore`.
@@ -33,7 +33,7 @@ An AI-powered email summarization and metadata extraction server that helps user
 6.  **Persistence**: Stores the session data, metadata, and embeddings in MongoDB and Qdrant.
 7.  **Feedback Loop**: When users provide feedback via `/feedback`, the `AdaptiveLearner` updates the `LearningStore` with new rules.
 
-## ?? Setup & Installation
+## Setup & Installation
 
 ### 1. Prerequisites
 
@@ -88,38 +88,10 @@ Or manually using uvicorn:
 uvicorn api.main:app --reload --port 8000
 ```
 
-## ?? API Endpoints
+## API Endpoints
 
 - `GET /`: Health check.
 - `POST /summarize`: Summarize an email. Expects an `EmailDoc` JSON body. **Requires `X-API-Key` header**.
 - `POST /feedback`: Submit user feedback for a summary session. **Requires `X-API-Key` header**.
 - `GET /health/live`: Liveness check.
 - `GET /health/ready`: Readiness check.
-
-## 🚀 Deployed Instance
-
-**Live Backend**: https://email-summarizer-ybjk.onrender.com/
-
-### Quick Test Commands
-
-```bash
-# Root
-curl https://email-summarizer-ybjk.onrender.com/
-
-# Health
-curl https://email-summarizer-ybjk.onrender.com/health/live
-
-# Summarize (replace YOUR_API_KEY)
-curl -X POST https://email-summarizer-ybjk.onrender.com/summarize \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"id": "test", "text": "Meeting tomorrow at 2pm", "user_id": "user1"}'
-```
-
-**Status**: ✅ All endpoints tested and functional on deployed instance (2024-03-23).
-
----
-
-_For detailed guides on deployment, see [DEPLOYMENT.md](DEPLOYMENT.md)._
-
-X-API-Key" = "b7f3c9a8e2d14f6bb5c4a91d8f0e7c6a3b2d1e9f8a7c6b5d4e3f2a1b9c8d7e6"
