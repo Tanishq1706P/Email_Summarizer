@@ -18,7 +18,7 @@ python-multipart==0.0.9
 
 # Storage / Vector DB / Caching
 pymongo==4.5.0
-qdrant-client==1.7.0
+# qdrant-client==1.7.0
 redis==5.0.1
 
 # Caching + environment

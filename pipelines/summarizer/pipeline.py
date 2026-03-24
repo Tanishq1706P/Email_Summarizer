@@ -29,12 +29,11 @@ class EmailSummarizationPipeline:
     def __init__(self):
         self._training_mode = CFG.get("training_mode", False)
         self._generator     = Generator()
-        self._evaluator     = Evaluator() if (self._training_mode and CFG.get("eval_enabled")) else None
-        self._corrector     = SelfCorrector() if (self._training_mode and CFG.get("eval_enabled")) else None
         self._learning_lock = threading.RLock()
         self._store         = LearningStore(CFG.get("learning_store_path"))
         self._learner       = AdaptiveLearner(self._store)
-        self._embedder      = Embedder()
+        # Eval/Embed disabled prod (OOM protection)
+        self._embedder      = None
 
         stats = self._store.stats()
         logger.info(
@@ -47,6 +46,9 @@ class EmailSummarizationPipeline:
         )
 
     def summarize(self, email: EmailDoc) -> SummaryResult:
+        # Preprocess for LLM
+        email.text = preprocess_email_text(email.text)
+        
         """
         Summarize a single pre-masked email.
         """
@@ -70,7 +72,7 @@ class EmailSummarizationPipeline:
             subject = email.metadata.get("subject", "")
             
             # Generate vector embedding for subject and summary
-            vector_embedding = self._embedder.embed_summary_and_subject(summary, subject)
+            vector_embedding = None
 
             meta.latency_ms = round((time.perf_counter() - t0) * 1000, 2)
 
@@ -126,7 +128,8 @@ class EmailSummarizationPipeline:
                 ev.skipped = True
                 meta.eval_skipped = True
             else:
-                email_emb = self._evaluator.encode(email.text)
+        # Evaluator disabled
+        email_emb = None
                 action_items_raw = [
                     ActionItem(action=a.get("action", ""))
                     for a in data.get("action_items", [])

@@ -23,6 +23,8 @@ llm_circuit = CircuitBreaker("ollama_llm", failure_threshold=3, recovery_timeout
 class EmailSummarizationPipeline:
     def __init__(self):
         self._cfg = load_config()
+        # Preprocess email before pipeline
+        email.text = preprocess_email_text(email.text)
         self._delegate = SummarizerPipeline()
         self._store = LearningStore(self._cfg.get("learning_store_path"))
         self._learning_lock = threading.RLock()

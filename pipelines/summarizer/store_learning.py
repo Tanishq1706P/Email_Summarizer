@@ -34,7 +34,7 @@ class LearningStore:
         self._mongo_client: Optional[MongoClient] = None
         self._db = None
         self._use_mongo = False
-        self._embedder = Embedder()
+        # Embedder disabled prod OOM
 
         # Initialize MongoDB if URI is provided
         mongo_cfg = CFG.get("mongodb", {})
@@ -98,8 +98,8 @@ class LearningStore:
         subject = email.metadata.get("subject", "")
         summary = result.summary
         
-        # Generate vector embedding for subject and summary
-        vector_embedding = self._embedder.embed_summary_and_subject(summary, subject)
+        # Embeddings disabled prod
+        vector_embedding = None
 
         session_data = {
             "session_id": session_id,

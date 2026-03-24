@@ -2,15 +2,14 @@
 
 WORKDIR /app
 
-# Install system dependencies for some Python packages
+# Minimal system deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies
+# Copy requirements and install
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --only-binary=all -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
