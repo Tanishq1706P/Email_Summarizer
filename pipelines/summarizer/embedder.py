@@ -20,17 +20,12 @@ class Embedder:
         self.model_name = model_name or CFG.get(
             "eval_model", "sentence-transformers/all-MiniLM-L6-v2"
         )
-        self._model = None
 
+        if os.environ.get("RENDER") == "true":
+            logger.info("Embedder disabled for Render free tier (RAM)")
+            return
         try:
-            self._model = SentenceTransformer(self.model_name)
-            logger.info(f"Embedder initialized with model: {self.model_name}")
-        except Exception as e:
-            logger.error(
-                f"Failed to load embedding model '{self.model_name}': {e}",
-                exc_info=True,
-            )
-            self._model = None
+            self._model
 
     def get_embedding(self, text: str) -> str:
         if not text or not self._model:
