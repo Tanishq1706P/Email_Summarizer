@@ -13,8 +13,7 @@ WORKDIR /app
 
 # Multi-stage inspired: install deps first, copy code last
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
-ENV PATH=/root/.local/bin:${PATH}
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source (filtered by .dockerignore)
 COPY . .
@@ -27,4 +26,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/health/live || exit 1
 
 EXPOSE 8000
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
