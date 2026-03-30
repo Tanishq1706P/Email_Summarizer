@@ -36,6 +36,13 @@ class Embedder:
                 exc_info=True,
             )
             self._model = None
+            logger.info(f"Embedder initialized with model: {self.model_name}")
+        except Exception as e:
+            logger.error(
+                f"Failed to load embedding model '{self.model_name}': {e}",
+                exc_info=True,
+            )
+            self._model = None
 
     def get_embedding(self, text: str) -> str:
         if not text or not self._model:

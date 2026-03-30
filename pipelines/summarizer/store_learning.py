@@ -44,7 +44,7 @@ class LearningStore:
         mongo_cfg = CFG.get("mongodb", {})
         mongo_uri = os.environ.get("MONGO_URI", mongo_cfg.get("uri"))
 
-        if mongo_uri and not CFG.get("offline", False):
+        if mongo_uri:
             try:
                 self._mongo_client = MongoClient(
                     mongo_uri, serverSelectionTimeoutMS=2000
@@ -66,11 +66,13 @@ class LearningStore:
                 )
             except Exception as e:
                 logger.warning(
-                    f"Failed to connect to MongoDB, falling back to JSON: {e}"
+                    f"MongoDB unavailable, using JSON fallback: {e}"
                 )
                 self._use_mongo = False
         else:
+            logger.info("No MONGO_URI, using JSON fallback")
             self._use_mongo = False
+
 
         if not self._use_mongo:
             self._data = self._load_json()
