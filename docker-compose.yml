@@ -1,0 +1,75 @@
+﻿version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: email_summarizer_mongo
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
+      - MONGO_INITDB_DATABASE=email_summarizer
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  qdrant:
+    image: qdrant/qdrant:v1.10.1
+    container_name: email_summarizer_qdrant
+    ports: []
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: email_summarizer_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: email_summarizer_api
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASS}@mongodb:27017/email_summarizer?authSource=admin
+      - QDRANT_HOST=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - OLLAMA_HOST=http://host.docker.internal:11434 # Assumes Ollama on host
+    depends_on:
+      - mongodb
+      - qdrant
+      - redis
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+volumes:
+  mongodb_data:
+  qdrant_data:
