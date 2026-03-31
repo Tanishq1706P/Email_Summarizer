@@ -26,6 +26,9 @@ from models.data_model import (
 )
 from pipeline import EmailSummarizationPipeline
 from pipelines.summarizer.store_learning import LearningStore
+from mangum import Mangum
+
+handler = Mangum(app)
 
 # Setup structured logging
 logger = setup_logging("api.main")
