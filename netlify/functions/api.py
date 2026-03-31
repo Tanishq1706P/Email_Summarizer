@@ -349,5 +349,6 @@ async def batch_summarize(batch_req: BatchSummarizeRequest, request: Request):
         logger.error(f"Batch summarize failed: {e}", exc_info=True)
         return BatchResult(success=False, processed=0, message=str(e), error=str(e))
 
-from mangum import Mangum
-handler = Mangum(app)
+def handler(event, context):
+    from mangum import Mangum
+    return Mangum(app)(event, context)
