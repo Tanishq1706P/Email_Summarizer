@@ -2,6 +2,6 @@
   "training_mode": false,
   "eval_enabled": false,
   "learning_enabled": true,
-  "cache_enabled": true,
+  "cache_enabled": false,
   "offline": false
 }
