@@ -25,6 +25,11 @@ class DiskCache:
     max_entries: int = 5000
 
     def __post_init__(self) -> None:
+        # Use /tmp for read-only filesystems like OnRender
+        if not self.cache_dir.exists() and self.cache_dir.parent.name == 'summarizer':
+            tmp_cache = Path('/tmp') / 'email_summarizer_cache'
+            logger.warning(f'Cache dir {self.cache_dir} not writable, using {tmp_cache}')
+            self.cache_dir = tmp_cache
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def make_key(self, *, namespace: str, model: str, system: str, user: str) -> str:
@@ -65,6 +70,7 @@ class DiskCache:
     def set(self, key: str, value: Any) -> None:
         p = self._path_for(key)
         p.parent.mkdir(parents=True, exist_ok=True)
+        logger.debug(f'Writing cache to {p}')
         payload = {"_ts": time.time(), "value": value}
         try:
             p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
