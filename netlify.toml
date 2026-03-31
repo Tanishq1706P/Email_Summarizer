@@ -1,2 +1,3 @@
 [build]
-  functions
+  functions = "netlify/functions"
+  command = "pip install -r requirements.txt"
