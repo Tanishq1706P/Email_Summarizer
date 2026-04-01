@@ -73,7 +73,6 @@ class LearningStore:
             logger.info("No MONGO_URI, using JSON fallback")
             self._use_mongo = False
 
-
         if not self._use_mongo:
             self._data = self._load_json()
             print("LearningStore: JSON file")
@@ -298,7 +297,7 @@ class LearningStore:
         }
 
     def update_email_summary(
-        self, collection: str, email_id: str, summary_result: SummaryResult
+        self, collection: str, email_id: str, summary_result: dict | SummaryResult
     ) -> bool:
         """Update email document with summary_result."""
         if not self._use_mongo:
@@ -306,27 +305,57 @@ class LearningStore:
             return False
 
         try:
-            update_data = {"summary_result": summary_result.model_dump()}
+            if isinstance(summary_result, dict):
+                summary_data = summary_result
+            else:
+                summary_data = summary_result.model_dump()
+            update_data = {"summary_result": summary_data}
             result = self._db[collection].update_one(
                 {"id": email_id},
                 {"$set": update_data, "$currentDate": {"updated_at": True}},
+                upsert=True,
             )
+            success = result.acknowledged and (result.modified_count > 0 or result.upserted_id is not None)
             logger.info(
-                f"Updated email {email_id}: modified={result.modified_count > 0}"
+                f"Updated email {email_id}: modified={result.modified_count}, upserted={'yes' if result.upserted_id else 'no'}, success={success}"
             )
-            return result.modified_count > 0
+            return success
         except Exception as e:
             logger.error(f"Failed to update email {email_id}: {e}")
             return False
 
+    def insert_emails(self, emails: list) -> int:
+        """Insert emails into 'emails' collection. Extract text from raw MIME."""
+        from .text_extractor import extract_text
+        if not self._use_mongo:
+            logger.warning("insert_emails only supported with MongoDB")
+            return 0
+
+        try:
+            processed = []
+            for e in emails:
+                if not isinstance(e, dict):
+                    continue
+                e["id"] = e.get("id") or str(uuid.uuid4())
+                raw = e.get("raw") or e.get("text", "")
+                e["text"] = extract_text(raw)
+                e.setdefault("metadata", {})
+                if "raw" in e:
+                    e["metadata"]["has_raw"] = True
+                processed.append(e)
+            
+            result = self._db.emails.insert_many(processed)
+            logger.info(f"Inserted {len(result.inserted_ids)} emails with extracted text")
+            return len(result.inserted_ids)
         except Exception as e:
-            logger.error(f"Failed to update email {email_id}: {e}")
-            return False
+            logger.error(f"Failed to insert emails: {e}")
+            return 0
 
     def get_emails(
         self, collection: str = "emails", limit: Optional[int] = None
     ) -> List[EmailDoc]:
         """Fetch emails from specified collection for batch processing."""
+        from .text_extractor import extract_text
         if not self._use_mongo:
             logger.warning("get_emails only supported with MongoDB")
             return []
@@ -341,13 +370,18 @@ class LearningStore:
 
             for doc in query:
                 try:
+                    # Prefer existing text, fallback to extract from raw
+                    raw_content = doc.get('raw') or doc.get('text', '')
+                    clean_text = doc.get('text') or extract_text(raw_content)
+                    
                     email_doc = EmailDoc(
                         id=doc.get("id", str(uuid.uuid4())),
-                        text=doc.get("text", ""),
+                        text=clean_text,
                         user_id=doc.get("user_id", "unknown"),
                         metadata=doc.get("metadata", {}),
                     )
                     emails.append(email_doc)
+                    logger.debug(f"Email {email_doc.id}: text_len={len(clean_text)}")
                 except Exception as e:
                     logger.warning(f"Failed to parse email {doc.get('id')}: {e}")
 
@@ -356,3 +390,4 @@ class LearningStore:
         except Exception as e:
             logger.error(f"Failed to fetch emails from {collection}: {e}")
             return []
+

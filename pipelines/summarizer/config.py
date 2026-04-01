@@ -59,7 +59,7 @@ def default_config() -> dict[str, Any]:
             "context_richness": 0.2,
         },
         # ---- Caching ----
-        "cache_enabled": True,
+        "cache_enabled": False,
         "cache_ttl_seconds": 3600 * 24,  # 24 hours
         "cache_max_entries": 10000,
         # ---- Concurrency ----

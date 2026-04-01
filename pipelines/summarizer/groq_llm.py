@@ -32,4 +32,6 @@ class GroqLLM:
             response_format={"type": "json_object"},
             max_tokens=1024,
         )
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        # print(f"[GROQ RAW] model={self._model} len={len(content)} preview='{content[:200]}...'")
+        return content

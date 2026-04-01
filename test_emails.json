@@ -1,0 +1,13 @@
+{
+  "text": "Hi Team,\n\nI hope everyone is doing well.\n\nFollowing our leadership sync earlier this week, I wanted to share a comprehensive update on the Q2 product roadmap, key priorities, and the actions required from each team over the next few weeks. Please read this carefully, as there are multiple dependencies and deadlines that require coordination across Product, Engineering, and Design.\n\n1. Strategic Overview:\nOur primary focus for Q2 remains centered on improving user retention, enhancing onboarding experience, and accelerating feature delivery cycles. Based on recent analytics and customer feedback, we have identified three critical areas:\n- Onboarding Optimization: Reduce drop-off rate within the first 48 hours\n- Performance Improvements: Decrease average page load time by at least 30%\n- Feature Adoption: Increase usage of the new dashboard by 25%\n\n2. Key Deliverables:\nA. Revamped Onboarding Flow:\n- New user journey with guided walkthroughs\n- Contextual tooltips and progress tracking\n- A/B testing for different onboarding variants\nDeadline: April 25\n\nB. Dashboard v2.0 Enhancements:\n- Improved UI/UX based on user feedback\n- Faster data rendering with backend optimizations\n- Integration with analytics module\nDeadline: May 10\n\nC. Notification System Upgrade:\n- Real-time notifications using WebSockets\n- User preference controls\n- Email + in-app notification sync\nDeadline: May 20\n\n3. Dependencies & Risks:\n- Backend API readiness required before frontend implementation\n- Design assets must be finalized before development\n- QA cycles may extend timelines\nRisks include backend resource constraints, API delays, and QA workload\n\n4. Action Items:\nProduct: Finalize PRDs, coordinate with Design, define metrics\nEngineering: Backend optimization, notifications infra, weekly updates\nDesign: High-fidelity designs, usability improvements, consistency\n\n5. Communication Plan:\n- Weekly Monday sync at 10 AM\n- Slack channel #q2-roadmap\n- Bi-weekly stakeholder reviews\n\n6. Additional Notes:\n- Track tasks in Jira under Q2 Roadmap\n- Update documentation in Confluence\n- Raise blockers early\n\n7. Next Steps:\n- Review and acknowledge\n- Raise concerns if any\n- Begin execution\n\nThanks and regards,\nMichael Turner\nSenior Product Manager\nCompany Inc.",
+  "subject": "Q2 Product Roadmap Alignment, Deliverables, and Action Items",
+  "user_id": "michael.turner@company.com",
+  "metadata": {
+    "from": "Michael Turner <michael.turner@company.com>",
+    "to": "Product Team <product@company.com>",
+    "cc": [
+      "Engineering <engineering@company.com>",
+      "Design <design@company.com>"
+    ]
+  }
+}

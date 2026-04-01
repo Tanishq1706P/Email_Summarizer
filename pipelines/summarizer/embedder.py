@@ -1,6 +1,6 @@
 ﻿from typing import Optional
 
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer  # Lazy loaded in __init__
 
 from logging_utils import setup_logging
 from pipelines.summarizer.config import load_config
@@ -27,16 +27,13 @@ class Embedder:
             logger.info("Embedder disabled for Render free tier (RAM)")
             return
 
-        try:
+try:
+            from sentence_transformers import SentenceTransformer
             self._model = SentenceTransformer(self.model_name)
             logger.info(f"Embedder initialized with model: {self.model_name}")
-        except Exception as e:
-            logger.error(
-                f"Failed to load embedding model '{self.model_name}': {e}",
-                exc_info=True,
-            )
+        except ImportError as ie:
+            logger.warning(f"sentence_transformers not available - skipping embeddings: {ie}")
             self._model = None
-            logger.info(f"Embedder initialized with model: {self.model_name}")
         except Exception as e:
             logger.error(
                 f"Failed to load embedding model '{self.model_name}': {e}",

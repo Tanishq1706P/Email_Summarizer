@@ -9,6 +9,9 @@ __pycache__/
 venv/
 .env/
 
+#
+embeddings_server/
+
 # IDE / Editor
 .vscode/
 .idea/

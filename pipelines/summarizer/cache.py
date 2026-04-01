@@ -25,12 +25,13 @@ class DiskCache:
     max_entries: int = 5000
 
     def __post_init__(self) -> None:
-        # Use /tmp for read-only filesystems like OnRender
-        if not self.cache_dir.exists() and self.cache_dir.parent.name == 'summarizer':
+        # Always use writable dir on container platforms
+        if '/app/' in str(self.cache_dir):
             tmp_cache = Path('/tmp') / 'email_summarizer_cache'
-            logger.warning(f'Cache dir {self.cache_dir} not writable, using {tmp_cache}')
+            logger.warning(f'Container detected, cache dir {self.cache_dir} -> {tmp_cache}')
             self.cache_dir = tmp_cache
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        elif not self.cache_dir.exists():
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def make_key(self, *, namespace: str, model: str, system: str, user: str) -> str:
         # Avoid huge keys; hash inputs.

@@ -15,6 +15,7 @@ logger = setup_logging("summarizer.generator")
 CFG = load_config()
 
 
+
 class Generator:
     """
     Handles LLM summarization generation.
@@ -22,18 +23,21 @@ class Generator:
 
     def __init__(self) -> None:
         self._disk_cache = None
-        if CFG.get("cache_enabled", False):
-            self._disk_cache = DiskCache(
-                cache_dir=Path(CFG.get("cache_dir", ".cache")),
-                ttl_seconds=int(CFG.get("cache_ttl_seconds", 3600)),
-                max_entries=int(CFG.get("cache_max_entries", 1000)),
-            )
+        try:
+            if CFG.get("cache_enabled", False):
+                self._disk_cache = DiskCache(
+                    cache_dir=Path(CFG.get("cache_dir", "/tmp/email_summarizer_cache")),
+                    ttl_seconds=int(CFG.get("cache_ttl_seconds", 3600)),
+                    max_entries=int(CFG.get("cache_max_entries", 1000)),
+                )
+        except Exception as e:
+            logger.warning(f"Cache disabled due to init error: {e}")
+            self._disk_cache = None
         llm_type = "Groq"
         if os.environ.get("GROQ_API_KEY"):
             from pipelines.summarizer.groq_llm import GroqLLM
 
             self._llm = GroqLLM()
-            print(f"LLM: {llm_type} ({os.getenv('GROQ_MODEL', 'llama3.1-8b-instant')})")
         else:
             llm_type = "Ollama"
             self._llm = LocalOllama(
@@ -58,8 +62,9 @@ class Generator:
         self, email: EmailDoc, learned_instructions: str = ""
     ) -> Dict[str, Any]:
         """Generate a summary for the given email."""
-        # Preparation
-        prompt = self._prompt_template.replace("{{email_text}}", email.text)
+        subject = getattr(email, 'metadata', {}).get('subject', 'No Subject')
+        full_text = f"Subject: {subject}\\n\\nBody:\\n\\n{email.text}"
+        prompt = self._prompt_template.replace("{{email_text}}", full_text)
         if learned_instructions:
             prompt = learned_instructions + "\n\n" + prompt
 
@@ -88,6 +93,8 @@ class Generator:
                 head + "\n\n[ ... middle truncated for token limit ... ]\n\n" + tail
             )
 
+        # Input logging
+
         # LLM Call
         raw = self._llm.chat_json(
             model=str(CFG.get("llm")),
@@ -96,74 +103,51 @@ class Generator:
             options={"temperature": 0.1, "num_predict": CFG.get("num_predict", 512)},
         )
 
+        # Raw LLM logging
+        raw_model = CFG.get("llm")
+        raw_preview = raw[:300]
+
         # Robust JSON Parse
         def extract_json(text: str) -> Dict[str, Any]:
-            # Strip common wrappers
+            # Remove markdown wrappers
             text = re.sub(r"^```(?:json)?\s*\n?", "", text, flags=re.IGNORECASE)
             text = re.sub(r"\n?```$", "", text, flags=re.IGNORECASE)
             text = text.strip()
 
-            # Better regex for outermost JSON
-            match = re.search(r"(\{.*\})", text, re.DOTALL)
+            # Extract JSON block
+            match = re.search(r"\{.*\}", text, re.DOTALL)
             if not match:
                 return {}
 
-            json_str = match.group(1)
-            # Simple repair: balance quotes
-            json_str = re.sub(
-                r'"([^"\\]*(?:\\.[^"\\]*)*)"', lambda m: m.group(1), json_str
-            )
+            json_str = match.group(0)
 
             try:
                 return json.loads(json_str)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                print(f"[JSON ERROR] {e}")
                 return {}
-
+                
         result = extract_json(raw)
+        summary_preview = str(result.get('summary', ''))[:100]
+        # print(f"[PARSED RESULT] email={getattr(email, 'id', 'unknown')} | keys={list(result.keys())} | has_summary={bool(result.get('summary'))} | preview_len={len(summary_preview)} preview='{summary_preview}'")
 
-        # Guarantee non-empty summary
-        if not result.get("summary") and email.text.strip():
-            # Simple lang detect
-            non_ascii_ratio = len([c for c in email.text if ord(c) > 127]) / len(
-                email.text
-            )
-            if non_ascii_ratio > 0.3:
-                result = {
-                    "summary": "Non-English email content detected. English summary unavailable.",
-                    "type": "PERS",
-                    "priority": "Low",
-                    "confidence": 0.3,
-                    "flags": {"multilingual": True},
-                }
-            else:
-                # Heuristic fallback
-                lines = [
-                    line.strip() for line in email.text.split("\n") if line.strip()
-                ]
-                first_line = lines[0] if lines else "No content"
-                subject = email.metadata.get("subject", "No subject")
-                urgency_words = ["urgent", "asap", "immediate", "today", "now"]
-                priority = (
-                    "HIGH"
-                    if any(word in email.text.lower() for word in urgency_words)
-                    else "Normal"
-                )
-                result = {
-                    "summary": f"Subject: {subject}. Priority: {priority}. Content excerpt: {first_line[:200]}...",
-                    "type": "BIZ",
-                    "category": "Work",
-                    "priority": priority,
-                    "urgency": "MEDIUM",
-                    "confidence": 0.5,
-                    "action_items": [],
-                    "key_details": {},
-                    "flags": {"fallback_used": True},
-                }
+        if not result.get("summary"):
+            # print(f"[GENERATOR FAIL] email={getattr(email, 'id', 'unknown')} | raw_len={len(raw)} | keys={list(result.keys())} | raw_preview='{raw[:100]}...'")
+            logger.error(f"Generator failed email {getattr(email, 'id', 'unknown')}: raw_len={len(raw)}, preview='{raw[:200]}...', keys={list(result.keys())}")
+
+            logger.warning(f"Template fallback DISABLED for {getattr(email, 'id', 'unknown')} - summary=null")
+            result = {
+                "summary": None,
+                "type": "UNKNOWN",
+                "confidence": 0.0,
+                "flags": {"fallback_disabled": True, "email_id": getattr(email, 'id', 'unknown')},
+            }
         elif not email.text.strip():
             result = {
-                "summary": "Empty email body provided.",
+                "summary": None,
                 "type": "NOTIF",
-                "confidence": 0.1,
+                "confidence": 0.0,
+                "flags": {"empty_body": True},
             }
 
         if result and self._disk_cache and cache_key:

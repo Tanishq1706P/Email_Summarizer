@@ -1,6 +1,6 @@
 {
   "training_mode": false,
-  "eval_enabled": false,
+  "eval_enabled": true,
   "learning_enabled": true,
   "cache_enabled": false,
   "offline": false
