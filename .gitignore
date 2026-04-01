@@ -9,8 +9,9 @@ __pycache__/
 venv/
 .env/
 
-#
+# tmp folders
 embeddings_server/
+/
 
 # IDE / Editor
 .vscode/
