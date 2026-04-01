@@ -11,7 +11,7 @@ venv/
 
 # tmp folders
 embeddings_server/
-/
+/wsl.localhost/Ubuntu/home/overlord/Projects/Android_Email_Project/
 
 # IDE / Editor
 .vscode/
