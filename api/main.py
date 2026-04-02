@@ -154,8 +154,6 @@ async def upload_emails(
         for e in emails_data:
             if not isinstance(e, dict):
                 continue
-
-            email_id = e.get("id") or str(uuid.uuid4())
             text = e.get("text") or e.get("raw", "")
 
             # ✅ Extract important fields
@@ -172,17 +170,22 @@ async def upload_emails(
                 metadata["user_id"] = user_id
 
             normalized.append({
-                "id": email_id,
                 "text": text,
+                "raw": e.get("raw"),
                 "metadata": metadata
             })
 
         if not normalized:
             raise HTTPException(400, "No valid emails")
 
-        store.insert_emails(normalized)
+        inserted = store.insert_emails(normalized)
 
-        return {"status": "success", "inserted": len(normalized)}
+        return {
+            "status": "success",
+            "inserted": inserted,
+            "received": len(normalized),
+            "duplicates": len(normalized) - inserted
+        }
 
     except Exception as e:
         logger.error(f"Upload failed: {e}")
