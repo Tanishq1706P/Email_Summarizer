@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class EmailDoc(BaseModel):
     id: str
-    text: str = Field(..., max_length=50000)
+    text: str = Field(..., max_length=500000)
     user_id: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
