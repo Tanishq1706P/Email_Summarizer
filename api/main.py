@@ -117,7 +117,7 @@ async def middleware(request: Request, call_next):
 # ---------------- HEALTH ----------------
 @app.get("/health/live")
 async def live():
-    return {"status": "live"}
+    return {"status_update": "live"}
 
 @app.get("/health/ready")
 async def ready():
