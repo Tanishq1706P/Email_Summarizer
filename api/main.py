@@ -170,6 +170,7 @@ async def upload_emails(
                 metadata["user_id"] = user_id
 
             normalized.append({
+                "id": e.get("id"),
                 "text": text,
                 "raw": e.get("raw"),
                 "metadata": metadata
