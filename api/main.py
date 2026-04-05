@@ -155,6 +155,7 @@ async def upload_emails(
             if not isinstance(e, dict):
                 continue
             text = e.get("text") or e.get("raw", "")
+            logger.info(f"Incoming email raw: {e}")
 
             # ✅ Extract important fields
             subject = e.get("subject")
