@@ -133,6 +133,8 @@ async def upload_emails(
     file: UploadFile = File(None),
     emails: Optional[ListModel[EmailDoc]] = Body(None),
 ):
+    logger.warning("UPLOAD API HIT")
+
     if not store._use_mongo:
         raise HTTPException(500, "MongoDB not configured")
 
@@ -150,7 +152,9 @@ async def upload_emails(
             raise HTTPException(400, "Provide file or emails list")
 
         normalized = []
+# logger.warning("UPLOAD API HIT")
 
+        logger.warning(f"RAW INPUT: {emails_data}")
         for e in emails_data:
             if not isinstance(e, dict):
                 continue
