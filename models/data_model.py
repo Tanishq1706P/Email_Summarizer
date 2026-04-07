@@ -1,4 +1,4 @@
-﻿"""
+"""
 Consolidated Data Models for Email Summarizer (Pydantic v2)
 """
 
