@@ -38,6 +38,7 @@ Body:
 OUTPUT FORMAT:
 
 {
+  "type": "<BIZ|CUST|SALES|LEGAL|HR|FIN|NEWS|NOTIF|THREAD|PERS>",
   "category": "<Work|Personal|Newsletter|Finance|HR|Other>",
   "subject": "<exact subject text>",
 
@@ -45,6 +46,57 @@ OUTPUT FORMAT:
 
   "detailedSummary": "<4-5 line detailed summary strictly grounded in the email>",
 
-  "priority": "<Urgent|Important|Normal|Low>",
+  "action_items": [
+    {
+      "owner": "<name or null>",
+      "action": "<explicit task from email>",
+      "deadline": "<exact date or null>",
+      "source_quote": "<exact substring from email body>"
+    }
+  ],
 
+  "open_questions": [
+    "<explicit question from email>"
+  ],
+
+  "deadline": "<most important date or null>",
+
+  "priority": "<Urgent|Important|Normal|Low>",
+  "urgency": "<CRITICAL|HIGH|MEDIUM|LOW>",
+  "sentiment": "<Positive|Neutral|Negative|Tense>",
+
+  "key_details": {
+    "dates": [],
+    "amounts": [],
+    "ids_and_references": [],
+    "attachments": []
+  },
+
+  "key_entities": {
+    "people": [],
+    "email_addresses": [],
+    "organizations": [],
+    "dates": []
+  },
+
+  "type_enrichment": {
+    "amount": null,
+    "currency": null,
+    "due_date": null,
+    "invoice_or_reference_number": null,
+    "payment_method": null,
+    "status": null
+  },
+
+  "flags": {
+    "confidential": false,
+    "context_gap": false,
+    "context_gap_note": null,
+    "multilingual": null,
+    "multilingual_original_values": null,
+    "attachments_unretrieved": [],
+    "budget_exceeded": false
+  },
+
+  "confidence": 0.0
 }
